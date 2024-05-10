@@ -15,16 +15,20 @@ rule := poutine.rule(rego.metadata.chain())
 
 github.caching_actions contains "actions/setup-go"
 
-has_action_with_cache(workflow, action) if {
-	step := workflow.jobs[_].steps[_]
-	step.action == action
-	not utils.step_args(step).cache
+step_args(step) = args if {
+	args := {arg.name: arg.value | arg := step["with"][_]}
 }
 
 has_action_with_cache(workflow, action) if {
 	step := workflow.jobs[_].steps[_]
 	step.action == action
-	utils.step_args(step).cache == "true"
+	not step_args(step).cache
+}
+
+has_action_with_cache(workflow, action) if {
+	step := workflow.jobs[_].steps[_]
+	step.action == action
+	step_args(step).cache == "true"
 }
 
 results contains poutine.finding(rule, pkg.purl, {"path": workflow.path, "details": details}) if {
